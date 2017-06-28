@@ -86,7 +86,6 @@ namespace SanityArchiver
                     currentDirectoryInfo = Directory.GetParent(CurrentDirectoryPath).Parent;
                 }
                 catch { MessageBox.Show("Error: Cannot navigate above root."); }
-
             }
         }
 
@@ -160,8 +159,9 @@ namespace SanityArchiver
             {
                 string[] row = new string[4];
                 row[0] = item.Name;
-                row[1] = "DIR";
-                row[2] = item.Name;
+                row[1] = "<DIR>";
+                string size = (String.Format("{0:N0} KB", DirSize(new DirectoryInfo(item.FullName)) / 1024));
+                if (size != "0 KB") row[2] = size; else row[2] = "Unknown";
                 row[3] = item.LastWriteTime.ToShortDateString() + item.LastWriteTime.ToLongTimeString();
                 ListViewItem lvitem = new ListViewItem(row);
                 NaviBox.Items.Add(lvitem);
@@ -172,7 +172,7 @@ namespace SanityArchiver
                 string[] row = new string[4];
                 row[0] = item.Name;
                 row[1] = item.Extension.ToUpper();
-                row[2] = item.Name;
+                row[2] = String.Format("{0:N0} KB", FileSize(new FileInfo(item.FullName)) / 1024);
                 row[3] = item.LastWriteTime.ToShortDateString() + item.LastWriteTime.ToLongTimeString();
                 ListViewItem lvitem = new ListViewItem(row);
                 NaviBox.Items.Add(lvitem);
@@ -180,9 +180,6 @@ namespace SanityArchiver
 
             NaviBox.Items[0].Selected = true;
             NaviBox.Items[0].Focused = true;
-            NaviBox.Invalidate();
-            NaviBox.Refresh();
-            NaviBox.Update();
         }
 
         private DirectoryInfo[] GetSubdirectories()
@@ -220,10 +217,31 @@ namespace SanityArchiver
 
         private void ClearContent()
         {
-            foreach (ListViewItem item in NaviBox.Items)
+            NaviBox.Items.Clear();
+        }
+
+        public static long DirSize(DirectoryInfo d)
+        {
+            long size = 0;
+            // Add file sizes.
+            try
             {
-                item.Remove();
+                FileInfo[] fis = d.GetFiles();
+                foreach (FileInfo fi in fis)
+                {
+                    size += fi.Length;
+                    return size;
+                }
             }
+            catch { }
+            return size;
+        }
+
+        public static long FileSize(FileInfo f)
+        {
+            long size = 0;
+            size += f.Length;
+            return size;
         }
     }
 }
