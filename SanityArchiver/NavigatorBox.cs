@@ -52,7 +52,7 @@ namespace SanityArchiver
 
         public void ChooseNavigateOrExecute()
         {
-            CurrentSelection = new FileInfo(CurrentDirectoryPath);
+            CurrentSelection = new FileInfo(CurrentDirectoryPath + NaviBox.SelectedItems[0].Text);
             if (IsItAFolder(CurrentSelection.FullName))
             {
                 WillNavigateIntoDirectory(true);
@@ -64,7 +64,6 @@ namespace SanityArchiver
                 currentDirectoryInfo = Directory.GetParent(CurrentDirectoryPath);
                 try
                 {
-                    Console.WriteLine(CurrentDirectoryPath);
                     Process.Start(CurrentSelection.FullName);
                 }
                 catch
@@ -86,7 +85,8 @@ namespace SanityArchiver
                 {
                     currentDirectoryInfo = Directory.GetParent(CurrentDirectoryPath).Parent;
                 }
-                catch { }
+                catch { MessageBox.Show("Error: Cannot navigate above root."); }
+
             }
         }
 
@@ -153,7 +153,6 @@ namespace SanityArchiver
 
             if (CurrentDirectoryPath != @"C:\\")
             {
-                Console.WriteLine(CurrentDirectoryPath);
                 NaviBox.Items.Add("..");
             }
 
@@ -211,6 +210,9 @@ namespace SanityArchiver
             }
             catch
             {
+                MessageBox.Show("ERROR: Access denied.");
+                currentDirectoryInfo = Directory.GetParent(CurrentDirectoryPath).Parent;
+                CurrentDirectoryPath = currentDirectoryInfo.FullName;
                 files = null;
                 return files;
             }
