@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Windows.Forms;
 
@@ -6,75 +7,218 @@ namespace SanityArchiver
 {
     class NavigatorBox
     {
-        public ListView naviBox;
-        public string currentDirectoryName;
+        public ListView NaviBox { get; set; }
+        public string CurrentDirectoryPath { get; set; }
+        public FileInfo CurrentSelection { get; set; }
         DirectoryInfo currentDirectoryInfo;
 
         public NavigatorBox(ListView naviBox)
         {
-            this.naviBox = naviBox;
-            currentDirectoryName = Directory.GetCurrentDirectory();
-            currentDirectoryInfo = new DirectoryInfo(currentDirectoryName);
+            NaviBox = naviBox;
+            CurrentDirectoryPath = @"C:\\";
+            currentDirectoryInfo = new DirectoryInfo(CurrentDirectoryPath);
         }
 
         public void Setup()
         {
-            naviBox.FullRowSelect = true;
-            naviBox.View = View.Details;
-            naviBox.GridLines = true;
+            NaviBox.FullRowSelect = true;
+            NaviBox.View = View.Details;
+            NaviBox.GridLines = true;
+            NaviBox.AllowColumnReorder = true;
             AddHeader();
             ListContent();
-            naviBox.Columns[0].Width = -2;
-            naviBox.Invalidate();
-            naviBox.DoubleClick += new EventHandler(NaviBox_MouseDoubleClick);
+            NaviBox.Refresh();
+            NaviBox.DoubleClick += new EventHandler(NaviBoxEvent_DoubleClick);
+            NaviBox.KeyDown += new KeyEventHandler(NaviBoxEvent_KeyDown);
         }
 
-        public void NavigateOneFolderUp()
+        public void NavigateOneDirectoryUp()
         {
-            currentDirectoryInfo = Directory.GetParent(Environment.CurrentDirectory);
-            currentDirectoryName = currentDirectoryInfo.FullName;
+            WillNavigateIntoDirectory(false);
+            CurrentDirectoryPath = currentDirectoryInfo.FullName + @"\";
             ListContent();
         }
 
-        private void NaviBox_MouseDoubleClick(object sender, EventArgs e)
+        private static bool IsItAFolder(string path)
         {
-            NavigateOneFolderUp();
+            FileAttributes fa = File.GetAttributes(path);
+            bool isDirectory = false;
+            if ((fa & FileAttributes.Directory) != 0)
+            {
+                isDirectory = true;
+            }
+            return isDirectory;
+        }
+
+        public void ChooseNavigateOrExecute()
+        {
+            CurrentSelection = new FileInfo(CurrentDirectoryPath);
+            if (IsItAFolder(CurrentSelection.FullName))
+            {
+                WillNavigateIntoDirectory(true);
+                currentDirectoryInfo = new DirectoryInfo(CurrentDirectoryPath);
+                ListContent();
+            }
+            else
+            {
+                currentDirectoryInfo = Directory.GetParent(CurrentDirectoryPath);
+                try
+                {
+                    Console.WriteLine(CurrentDirectoryPath);
+                    Process.Start(CurrentSelection.FullName);
+                }
+                catch
+                {
+                    MessageBox.Show("Error: Could not open file.");
+                }
+            }
+        }
+
+        private void WillNavigateIntoDirectory(bool navigateIn)
+        {
+            if (navigateIn)
+            {
+                CurrentDirectoryPath = CurrentDirectoryPath + NaviBox.SelectedItems[0].Text + @"\";
+            }
+            else
+            {
+                try
+                {
+                    currentDirectoryInfo = Directory.GetParent(CurrentDirectoryPath).Parent;
+                }
+                catch { }
+            }
+        }
+
+        private void SelectAction()
+        {
+            if (NaviBox.SelectedItems[0].Text == NaviBox.Items[0].Text && NaviBox.Items[0].Text == "..")
+            {
+                NavigateOneDirectoryUp();
+            }
+            else
+            {
+                ChooseNavigateOrExecute();
+            }
+        }
+
+        public bool KeyPressed(Keys key)
+        {
+            if (key == Keys.Enter)
+            {
+                return true;
+            }
+
+            if (key == Keys.Back)
+            {
+                NavigateOneDirectoryUp();
+            }
+            return false;
+        }
+
+        private void NaviBoxEvent_DoubleClick(object sender, EventArgs e)
+        {
+            SelectAction();
+        }
+
+        private void NaviBoxEvent_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (KeyPressed(e.KeyCode))
+            {
+                SelectAction();
+            }
         }
 
         private void AddHeader()
         {
-            if (naviBox.Columns.Count == 0)
+            if (NaviBox.Columns.Count == 0)
             {
-                naviBox.Columns.Add(currentDirectoryName, 20, HorizontalAlignment.Left);
+                NaviBox.Columns.Add(CurrentDirectoryPath, 0, HorizontalAlignment.Left);
+                NaviBox.Columns.Add("Ext", 0, HorizontalAlignment.Center);
+                NaviBox.Columns.Add("Size", 0, HorizontalAlignment.Center);
+                NaviBox.Columns.Add("Date", 0, HorizontalAlignment.Center);
             }
         }
 
         private void ListContent()
         {
-            DirectoryInfo[] subDirectories = currentDirectoryInfo.GetDirectories();
-            FileInfo[] files = currentDirectoryInfo.GetFiles();
+            DirectoryInfo[] subDirectories = GetSubdirectories();
+            FileInfo[] files = GetFiles();
+
+            if (subDirectories == null || files == null)
+                return;
 
             ClearContent();
+            NaviBox.Columns[0].Text = CurrentDirectoryPath;
 
-            naviBox.Columns[0].Text = currentDirectoryName;
-            naviBox.Items.Add("..");
+            if (CurrentDirectoryPath != @"C:\\")
+            {
+                Console.WriteLine(CurrentDirectoryPath);
+                NaviBox.Items.Add("..");
+            }
 
             foreach (DirectoryInfo item in subDirectories)
             {
-                naviBox.Items.Add(item.Name);
+                string[] row = new string[4];
+                row[0] = item.Name;
+                row[1] = "DIR";
+                row[2] = item.Name;
+                row[3] = item.LastWriteTime.ToShortDateString() + item.LastWriteTime.ToLongTimeString();
+                ListViewItem lvitem = new ListViewItem(row);
+                NaviBox.Items.Add(lvitem);
             }
 
             foreach (FileInfo item in files)
             {
-                naviBox.Items.Add(item.Name);
+                string[] row = new string[4];
+                row[0] = item.Name;
+                row[1] = item.Extension.ToUpper();
+                row[2] = item.Name;
+                row[3] = item.LastWriteTime.ToShortDateString() + item.LastWriteTime.ToLongTimeString();
+                ListViewItem lvitem = new ListViewItem(row);
+                NaviBox.Items.Add(lvitem);
             }
 
-            naviBox.Invalidate();
+            NaviBox.Items[0].Selected = true;
+            NaviBox.Items[0].Focused = true;
+            NaviBox.Invalidate();
+            NaviBox.Refresh();
+            NaviBox.Update();
+        }
+
+        private DirectoryInfo[] GetSubdirectories()
+        {
+            DirectoryInfo[] subDirectories;
+            try
+            {
+                subDirectories = currentDirectoryInfo.GetDirectories();
+                return subDirectories;
+            }
+            catch
+            {
+                subDirectories = null;
+                return subDirectories;
+            }
+        }
+
+        private FileInfo[] GetFiles()
+        {
+            FileInfo[] files;
+            try
+            {
+                files = currentDirectoryInfo.GetFiles();
+                return files;
+            }
+            catch
+            {
+                files = null;
+                return files;
+            }
         }
 
         private void ClearContent()
         {
-            foreach (ListViewItem item in naviBox.Items)
+            foreach (ListViewItem item in NaviBox.Items)
             {
                 item.Remove();
             }

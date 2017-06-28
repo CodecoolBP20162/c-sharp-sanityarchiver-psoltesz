@@ -18,6 +18,7 @@ namespace SanityArchiver
         {
             CreateNewNaviBox();
             CreateNewNaviBox();
+            RefreshView();
         }
 
         private void SanityCommanderForm_SizeChanged(object sender, EventArgs e)
@@ -31,10 +32,19 @@ namespace SanityArchiver
 
             foreach (NavigatorBox item in naviBoxes)
             {
-                item.naviBox.Size = new Size(ClientRectangle.Size.Width / naviBoxes.Count, ClientRectangle.Size.Height);
-                item.naviBox.Location = new Point(startingWidth, menuStrip1.Size.Height + 1);
+                item.NaviBox.Size = new Size(ClientRectangle.Size.Width / naviBoxes.Count, ClientRectangle.Size.Height);
+                item.NaviBox.Location = new Point(startingWidth, menuStrip1.Size.Height + 1);
 
                 startingWidth = startingWidth + ClientRectangle.Size.Width / naviBoxes.Count;
+
+                int csw = item.NaviBox.ClientSize.Width;
+                for (int i = 1; i < item.NaviBox.Columns.Count; i++)
+                {
+                    item.NaviBox.Columns[i].Width = -1;
+                    csw -= item.NaviBox.Columns[i].Width;
+                }
+
+                item.NaviBox.Columns[0].Width = csw;
             }
         }
 
@@ -43,15 +53,15 @@ namespace SanityArchiver
             string newNaviBoxName = "naviBox" + (naviBoxes.Count + 1).ToString();
             ListView newListView = new ListView();
             NavigatorBox newNaviBox = new NavigatorBox(newListView);
-            newNaviBox.naviBox.Name = newNaviBoxName;
-            newNaviBox.naviBox.View = View.Details;
+            newNaviBox.NaviBox.Name = newNaviBoxName;
+            newNaviBox.NaviBox.View = View.Details;
             int numberOfNaviboxes = CalculateNumberOfNaviBoxes();
-            newNaviBox.naviBox.Size = new Size(ClientRectangle.Size.Width / (naviBoxes.Count + numberOfNaviboxes), ClientRectangle.Size.Height);
-            newNaviBox.naviBox.Location = new Point(ClientRectangle.Location.X, menuStrip1.Size.Height + 1);
+            newNaviBox.NaviBox.Size = new Size(ClientRectangle.Size.Width / (naviBoxes.Count + numberOfNaviboxes), ClientRectangle.Size.Height);
+            newNaviBox.NaviBox.Location = new Point(ClientRectangle.Location.X, menuStrip1.Size.Height + 1);
             newNaviBox.Setup();
 
             naviBoxes.Add(newNaviBox);
-            Controls.Add(newNaviBox.naviBox);
+            Controls.Add(newNaviBox.NaviBox);
 
             RefreshView();
         }
