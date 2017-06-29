@@ -1,13 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Windows.Forms;
+
+
 
 namespace SanityArchiver
 {
     public partial class SanityCommanderForm : Form
     {
-        List<NavigatorBox> naviBoxes = new List<NavigatorBox>();
+        public static List<NavigatorBox> naviBoxes = new List<NavigatorBox>();
+        public static string selectedFilePath;
 
         public SanityCommanderForm()
         {
@@ -18,21 +22,21 @@ namespace SanityArchiver
         {
             CreateNewNaviBox();
             CreateNewNaviBox();
-            RefreshView();
+            RefreshNaviboxView();
         }
 
         private void SanityCommanderForm_SizeChanged(object sender, EventArgs e)
         {
-            RefreshView();
+            RefreshNaviboxView();
         }
 
-        private void RefreshView()
+        private void RefreshNaviboxView()
         {
             int startingWidth = CalculateStartingWidth();
 
             foreach (NavigatorBox item in naviBoxes)
             {
-                item.NaviBox.Size = new Size(ClientRectangle.Size.Width / naviBoxes.Count, ClientRectangle.Size.Height);
+                item.NaviBox.Size = new Size(ClientRectangle.Size.Width / naviBoxes.Count, ClientRectangle.Size.Height - (NavigatorBoxStatic.GetTaskbarHeight() + 10));
                 item.NaviBox.Location = new Point(startingWidth, menuStrip1.Size.Height + 1);
 
                 startingWidth = startingWidth + ClientRectangle.Size.Width / naviBoxes.Count;
@@ -50,7 +54,7 @@ namespace SanityArchiver
 
         private void CreateNewNaviBox()
         {
-            string newNaviBoxName = "naviBox" + (naviBoxes.Count + 1).ToString();
+            string newNaviBoxName = "naviBox" + naviBoxes.Count.ToString();
             ListView newListView = new ListView();
             NavigatorBox newNaviBox = new NavigatorBox(newListView);
             newNaviBox.NaviBox.Name = newNaviBoxName;
@@ -63,7 +67,7 @@ namespace SanityArchiver
             naviBoxes.Add(newNaviBox);
             Controls.Add(newNaviBox.NaviBox);
 
-            RefreshView();
+            RefreshNaviboxView();
         }
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
@@ -88,6 +92,53 @@ namespace SanityArchiver
         private void newPanelToolStripMenuItem1_Click(object sender, EventArgs e)
         {
             CreateNewNaviBox();
+        }
+
+        private void closePanelToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            DeleteNaviBox();
+        }
+
+        public void DeleteNaviBox()
+        {
+            if (naviBoxes.Count > 1)
+            {
+                naviBoxes.RemoveAt(naviBoxes.Count - 1);
+                string controlToDelete = "naviBox" + (naviBoxes.Count).ToString();
+                Control ctn = Controls[controlToDelete];
+                Controls.Remove(ctn);
+            }
+            else
+            {
+                CustomDialogs.ErrorMessage("You only have one panel.", "Error");
+            }
+            RefreshNaviboxView();
+        }
+
+        private void propertiesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            NavigatorBoxStatic.ShowFileProperties(selectedFilePath);
+        }
+
+        private void packToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            NavigatorBoxStatic.PackFile(MakeFileInfoFromPath());
+        }
+
+        private void unpackToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            NavigatorBoxStatic.UnpackFile(MakeFileInfoFromPath());
+        }
+
+        private void deleteDELToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            NavigatorBoxStatic.DeleteFile(selectedFilePath);
+        }
+
+        private FileInfo MakeFileInfoFromPath()
+        {
+            FileInfo fi = new FileInfo(selectedFilePath);
+            return fi;
         }
     }
 }
