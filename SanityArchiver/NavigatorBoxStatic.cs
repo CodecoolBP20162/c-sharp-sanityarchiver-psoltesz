@@ -69,7 +69,7 @@ namespace SanityArchiver
             {
                 File.Delete(path);
             }
-            catch { CustomDialogs.ErrorMessage("Error: Access denied.", "Error"); }
+            catch { CustomDialog.ErrorMessage("Error: Access denied.", "Error"); }
             RefreshNaviBoxContent();
         }
 
@@ -79,8 +79,38 @@ namespace SanityArchiver
             {
                 Directory.Delete(path);
             }
-            catch { CustomDialogs.ErrorMessage("Error: Access denied.", "Error"); }
+            catch { CustomDialog.ErrorMessage("Error: Access denied.", "Error"); }
             RefreshNaviBoxContent();
+        }
+
+
+        public static bool IsItADirectory(string path)
+        {
+            bool isDirectory = false;
+            try
+            {
+                FileAttributes fa = File.GetAttributes(path);
+                if ((fa & FileAttributes.Directory) != 0)
+                {
+                    isDirectory = true;
+                }
+                return isDirectory;
+            }
+            catch { }
+            return isDirectory;
+        }
+
+        public static void EncryptFile(string FileName)
+        {
+
+            File.Encrypt(FileName);
+            CustomDialog.ErrorMessage("File encrypted successfully.", "Notification");
+        }
+
+        public static void DecryptFile(string FileName)
+        {
+            File.Decrypt(FileName);
+            CustomDialog.ErrorMessage("File decrypted successfully.", "Notification");
         }
 
         public static long FileSize(FileInfo f)
@@ -88,6 +118,65 @@ namespace SanityArchiver
             long size = 0;
             size += f.Length;
             return size;
+        }
+
+
+        public static int CalculateNumberOfNaviBoxes()
+        {
+            if (SanityCommanderForm.naviBoxes.Count == 0)
+            {
+                return 1;
+            }
+            return 0;
+        }
+
+        public static void CopyFile(string oldPath, string newPath)
+        {
+            try
+            {
+                File.Copy(oldPath, newPath, true);
+                RefreshNaviBoxContent();
+            }
+            catch { CustomDialog.ErrorMessage("Copy unsuccessful.", "Error"); }
+        }
+
+        public static FileInfo MakeFileInfoFromPath()
+        {
+            FileInfo fi = null;
+            try
+            {
+                fi = new FileInfo(SanityCommanderForm.SelectedFilePath);
+            }
+            catch { }
+            return fi;
+        }
+
+        public static void RenameFile(string oldName, string newName)
+        {
+            try
+            {
+                if (File.Exists(newName))
+                {
+                    File.Delete(newName);
+                }
+                File.Move(oldName, newName);
+                RefreshNaviBoxContent();
+            }
+            catch { CustomDialog.ErrorMessage("Rename unsuccessful.", "Error"); }
+        }
+
+        public static void RenameDirectory(string oldName, string newName)
+        {
+            try
+            {
+                if (Directory.Exists(newName))
+                {
+                    Directory.Delete(newName);
+                }
+                Directory.Move(oldName, newName);
+                RefreshNaviBoxContent();
+            }
+            catch { CustomDialog.ErrorMessage("Rename unsuccessful.", "Error"); }
         }
 
         public static long DirSize(DirectoryInfo d)
@@ -107,73 +196,94 @@ namespace SanityArchiver
             return size;
         }
 
+        public static void CheckIfEncryptable()
+        {
+            if (!IsItADirectory(SanityCommanderForm.SelectedFilePath))
+            {
+                try
+                {
+                    EncryptFile(SanityCommanderForm.SelectedFilePath);
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+            }
+            CustomDialog.ErrorMessage("Selection is not a file: it cannot be encrypted.", "Error");
+        }
+
+        public static void CheckIfDecryptable()
+        {
+            if (!IsItADirectory(SanityCommanderForm.SelectedFilePath))
+            {
+                try
+                {
+                    DecryptFile(SanityCommanderForm.SelectedFilePath);
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+            }
+            CustomDialog.ErrorMessage("Selection is not a file: it cannot be decrypted.", "Error");
+        }
+
         public static void PackFile(FileInfo fi)
         {
-            using (FileStream inFile = fi.OpenRead())
+            if (fi != null)
             {
-                if ((File.GetAttributes(fi.FullName)
-                    & FileAttributes.Hidden)
-                    != FileAttributes.Hidden & fi.Extension != ".gz")
+                using (FileStream inFile = fi.OpenRead())
                 {
-                    using (FileStream outFile =
-                                File.Create(fi.FullName + ".gz"))
+                    if ((File.GetAttributes(fi.FullName)
+                        & FileAttributes.Hidden)
+                        != FileAttributes.Hidden & fi.Extension != ".gz")
                     {
-                        using (GZipStream Compress =
-                            new GZipStream(outFile,
-                            CompressionMode.Compress))
+                        using (FileStream outFile =
+                                    File.Create(fi.FullName + ".gz"))
                         {
-                            inFile.CopyTo(Compress);
+                            using (GZipStream Compress =
+                                new GZipStream(outFile,
+                                CompressionMode.Compress))
+                            {
+                                inFile.CopyTo(Compress);
 
-                            Console.WriteLine("Compressed {0} from {1} to {2} bytes.",
-                                fi.Name, fi.Length.ToString(), outFile.Length.ToString());
+                                Console.WriteLine("Compressed {0} from {1} to {2} bytes.",
+                                    fi.Name, fi.Length.ToString(), outFile.Length.ToString());
+                            }
                         }
                     }
                 }
+                RefreshNaviBoxContent();
             }
-            RefreshNaviBoxContent();
+            else { CustomDialog.ErrorMessage("Selection cannot be packed.", "Error"); }
         }
 
         public static void UnpackFile(FileInfo fi)
         {
-            using (FileStream inFile = fi.OpenRead())
+            if (fi != null)
             {
-                string curFile = fi.FullName;
-                string origName = curFile.Remove(curFile.Length -
-                        fi.Extension.Length);
-
-                using (FileStream outFile = File.Create(origName))
+                using (FileStream inFile = fi.OpenRead())
                 {
-                    using (GZipStream Decompress = new GZipStream(inFile,
-                            CompressionMode.Decompress))
+                    string curFile = fi.FullName;
+                    string origName = curFile.Remove(curFile.Length -
+                            fi.Extension.Length);
+
+                    using (FileStream outFile = File.Create(origName))
                     {
-                        Decompress.CopyTo(outFile);
+                        using (GZipStream Decompress = new GZipStream(inFile,
+                                CompressionMode.Decompress))
+                        {
+                            Decompress.CopyTo(outFile);
 
-                        Console.WriteLine("Decompressed: {0}", fi.Name);
-
+                            Console.WriteLine("Decompressed: {0}", fi.Name);
+                        }
                     }
                 }
+                RefreshNaviBoxContent();
             }
-            RefreshNaviBoxContent();
-        }
-
-        public static void RenameFile(string oldName, string newName)
-        {
-            if (File.Exists(newName))
-            {
-                File.Delete(newName);
-            }
-            //File.Move(oldName, newName);
-            RefreshNaviBoxContent();
-        }
-
-        public static void RenameDirectory(string oldName, string newName)
-        {
-            if (Directory.Exists(newName))
-            {
-                Directory.Delete(newName);
-            }
-            Directory.Move(oldName, newName);
-            RefreshNaviBoxContent();
+            else { CustomDialog.ErrorMessage("Selection is not packed.", "Error"); }
         }
     }
 }

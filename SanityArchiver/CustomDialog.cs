@@ -3,7 +3,7 @@ using System.Windows.Forms;
 
 namespace SanityArchiver
 {
-    public static class CustomDialogs
+    public static class CustomDialog
     {
         public static void ErrorMessage(string text, string caption)
         {

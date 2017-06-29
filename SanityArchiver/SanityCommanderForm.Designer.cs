@@ -39,12 +39,15 @@
             this.unpackToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.propertiesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.deleteDELToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.encryptFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.decryptFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
             // menuStrip1
             // 
             this.menuStrip1.AutoSize = false;
+            this.menuStrip1.BackColor = System.Drawing.Color.SkyBlue;
             this.menuStrip1.ImageScalingSize = new System.Drawing.Size(20, 20);
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripMenuItem,
@@ -54,6 +57,8 @@
             this.packToolStripMenuItem,
             this.unpackToolStripMenuItem,
             this.propertiesToolStripMenuItem,
+            this.encryptFileToolStripMenuItem,
+            this.decryptFileToolStripMenuItem,
             this.deleteDELToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
@@ -120,15 +125,33 @@
             // 
             // deleteDELToolStripMenuItem
             // 
+            this.deleteDELToolStripMenuItem.BackColor = System.Drawing.Color.Transparent;
             this.deleteDELToolStripMenuItem.Name = "deleteDELToolStripMenuItem";
             this.deleteDELToolStripMenuItem.Size = new System.Drawing.Size(83, 46);
             this.deleteDELToolStripMenuItem.Text = "Delete (DEL)";
             this.deleteDELToolStripMenuItem.Click += new System.EventHandler(this.deleteDELToolStripMenuItem_Click);
             // 
+            // encryptFileToolStripMenuItem
+            // 
+            this.encryptFileToolStripMenuItem.BackColor = System.Drawing.Color.Transparent;
+            this.encryptFileToolStripMenuItem.Name = "encryptFileToolStripMenuItem";
+            this.encryptFileToolStripMenuItem.Size = new System.Drawing.Size(80, 46);
+            this.encryptFileToolStripMenuItem.Text = "Encrypt File";
+            this.encryptFileToolStripMenuItem.Click += new System.EventHandler(this.encryptFileToolStripMenuItem_Click);
+            // 
+            // decryptFileToolStripMenuItem
+            // 
+            this.decryptFileToolStripMenuItem.BackColor = System.Drawing.Color.Transparent;
+            this.decryptFileToolStripMenuItem.Name = "decryptFileToolStripMenuItem";
+            this.decryptFileToolStripMenuItem.Size = new System.Drawing.Size(81, 46);
+            this.decryptFileToolStripMenuItem.Text = "Decrypt File";
+            this.decryptFileToolStripMenuItem.Click += new System.EventHandler(this.decryptFileToolStripMenuItem_Click);
+            // 
             // SanityCommanderForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.BackColor = System.Drawing.SystemColors.ButtonShadow;
             this.ClientSize = new System.Drawing.Size(1084, 537);
             this.Controls.Add(this.menuStrip1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
@@ -156,6 +179,8 @@
         private System.Windows.Forms.ToolStripMenuItem propertiesToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem renameF2ToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem deleteDELToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem encryptFileToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem decryptFileToolStripMenuItem;
     }
 }
 

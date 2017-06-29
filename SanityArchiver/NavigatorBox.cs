@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
 
@@ -27,88 +28,50 @@ namespace SanityArchiver
             NaviBox.View = View.Details;
             NaviBox.AllowColumnReorder = true;
             NaviBox.LabelEdit = true;
+            NaviBox.AllowDrop = true;
             AddHeader();
             ListContent();
             NaviBox.Refresh();
+
             NaviBox.Click += new EventHandler(NaviBoxEvent_Click);
             NaviBox.DoubleClick += new EventHandler(NaviBoxEvent_DoubleClick);
             NaviBox.KeyDown += new KeyEventHandler(NaviBoxEvent_KeyDown);
             NaviBox.KeyUp += new KeyEventHandler(NaviBoxEvent_KeyUp);
             NaviBox.AfterLabelEdit += new LabelEditEventHandler(NaviBoxEvent_AfterLabelEdit);
+            NaviBox.DragDrop += new DragEventHandler(NaviBoxEvent_DragDrop);
+            NaviBox.DragEnter += new DragEventHandler(NaviBoxEvent_DragEnter);
+            NaviBox.ItemDrag += new ItemDragEventHandler(NaviBoxEvent_ItemDrag);
+            NaviBox.DragOver += new DragEventHandler(NaviBoxEvent_DragOver);
+            NaviBox.DragLeave += new EventHandler(NaviBoxEvent_DragLeave);
+        }
+
+        private void ClearContent()
+        {
+            NaviBox.Items.Clear();
         }
 
         public void NavigateOneDirectoryUp()
         {
             WillNavigateIntoDirectory(false);
             CurrentDirectoryPath = currentDirectoryInfo.FullName + @"\";
-            ListContent();
         }
 
-        private static bool IsItADirectory(string path)
+        public bool KeyUp(Keys key)
         {
-            FileAttributes fa = File.GetAttributes(path);
-            bool isDirectory = false;
-            if ((fa & FileAttributes.Directory) != 0)
+            if (key == Keys.Up || key == Keys.Down)
             {
-                isDirectory = true;
+                return true;
             }
-            return isDirectory;
-        }
-
-        public void ChooseNavigateOrExecute()
-        {
-            CurrentSelection = new FileInfo(CurrentDirectoryPath + NaviBox.SelectedItems[0].Text);
-            if (IsItADirectory(CurrentSelection.FullName))
-            {
-                WillNavigateIntoDirectory(true);
-                currentDirectoryInfo = new DirectoryInfo(CurrentDirectoryPath);
-                ListContent();
-            }
-            else
-            {
-                currentDirectoryInfo = Directory.GetParent(CurrentDirectoryPath);
-                try
-                {
-                    Process.Start(CurrentSelection.FullName);
-                }
-                catch
-                {
-                    CustomDialogs.ErrorMessage("ERROR: Could not open file.", "Error");
-                }
-            }
-        }
-
-        private void WillNavigateIntoDirectory(bool navigateIn)
-        {
-            if (navigateIn)
-            {
-                CurrentDirectoryPath = CurrentDirectoryPath + NaviBox.SelectedItems[0].Text + @"\";
-            }
-            else
-            {
-                try
-                {
-                    currentDirectoryInfo = Directory.GetParent(CurrentDirectoryPath).Parent;
-                }
-                catch { CustomDialogs.ErrorMessage("ERROR: Cannot navigate above disk root.", "Error"); }
-            }
-        }
-
-        private void SelectAction()
-        {
-            if (NaviBox.SelectedItems[0].Text == NaviBox.Items[0].Text && NaviBox.Items[0].Text == "..")
-            {
-                NavigateOneDirectoryUp();
-            }
-            else
-            {
-                ChooseNavigateOrExecute();
-            }
+            return false;
         }
 
         private void SelectItem()
         {
-            SanityCommanderForm.selectedFilePath = CurrentDirectoryPath + NaviBox.SelectedItems[0].Text;
+            try
+            {
+                SanityCommanderForm.SelectedFilePath = CurrentDirectoryPath + NaviBox.SelectedItems[0].Text;
+            }
+            catch { }
         }
 
         private void AddHeader()
@@ -122,49 +85,16 @@ namespace SanityArchiver
             }
         }
 
-        public void ListContent()
+        private void SelectAction()
         {
-            DirectoryInfo[] subDirectories = GetSubdirectories();
-            FileInfo[] files = GetFiles();
-
-            if (subDirectories == null || files == null)
-                return;
-
-            ClearContent();
-            NaviBox.Columns[0].Text = CurrentDirectoryPath;
-
-            if (CurrentDirectoryPath != @"C:\\")
+            if (NaviBox.SelectedItems[0].Text == NaviBox.Items[0].Text && NaviBox.Items[0].Text == "..")
             {
-                NaviBox.Items.Add("..");
+                NavigateOneDirectoryUp();
             }
-
-            foreach (DirectoryInfo item in subDirectories)
+            else
             {
-                string[] row = new string[4];
-                row[0] = item.Name;
-                row[1] = "<DIR>";
-                string size = (String.Format("{0:N0} KB", NavigatorBoxStatic.DirSize(new DirectoryInfo(item.FullName)) / 1024));
-                if (size != "0 KB") row[2] = size; else row[2] = "Unknown";
-                row[3] = item.LastWriteTime.ToShortDateString() + item.LastWriteTime.ToLongTimeString();
-                ListViewItem lvitem = new ListViewItem(row);
-                lvitem.BackColor = Color.LightGoldenrodYellow;
-                NaviBox.Items.Add(lvitem);
+                ChooseNavigateOrExecute();
             }
-
-            foreach (FileInfo item in files)
-            {
-                string[] row = new string[4];
-                row[0] = item.Name; // Path.GetFileNameWithoutExtension(item.Name);
-                row[1] = item.Extension.ToUpper();
-                row[2] = String.Format("{0:N0} KB", NavigatorBoxStatic.FileSize(new FileInfo(item.FullName)) / 1024);
-                row[3] = item.CreationTime.ToShortDateString() + item.CreationTime.ToLongTimeString();
-                ListViewItem lvitem = new ListViewItem(row);
-                lvitem.BackColor = Color.LightCyan;
-                NaviBox.Items.Add(lvitem);
-            }
-
-            NaviBox.Items[0].Selected = true;
-            NaviBox.Items[0].Focused = true;
         }
 
         private DirectoryInfo[] GetSubdirectories()
@@ -192,7 +122,7 @@ namespace SanityArchiver
             }
             catch
             {
-                CustomDialogs.ErrorMessage("ERROR: Access denied.", "Error");
+                CustomDialog.ErrorMessage("ERROR: Access denied.", "Error");
                 currentDirectoryInfo = Directory.GetParent(CurrentDirectoryPath).Parent;
                 CurrentDirectoryPath = currentDirectoryInfo.FullName;
                 files = null;
@@ -200,9 +130,102 @@ namespace SanityArchiver
             }
         }
 
-        private void ClearContent()
+        private void WillNavigateIntoDirectory(bool navigateIn)
         {
-            NaviBox.Items.Clear();
+            if (navigateIn)
+            {
+                CurrentDirectoryPath = CurrentDirectoryPath + NaviBox.SelectedItems[0].Text + @"\";
+            }
+            else
+            {
+                try
+                {
+                    currentDirectoryInfo = Directory.GetParent(CurrentDirectoryPath).Parent;
+                    ListContent();
+                }
+                catch { CustomDialog.ErrorMessage("ERROR: Cannot navigate above disk root.", "Error"); }
+            }
+        }
+
+        public void ChooseNavigateOrExecute()
+        {
+            CurrentSelection = new FileInfo(CurrentDirectoryPath + NaviBox.SelectedItems[0].Text);
+            if (NavigatorBoxStatic.IsItADirectory(CurrentSelection.FullName))
+            {
+                WillNavigateIntoDirectory(true);
+                currentDirectoryInfo = new DirectoryInfo(CurrentDirectoryPath);
+                ListContent();
+            }
+            else
+            {
+                currentDirectoryInfo = Directory.GetParent(CurrentDirectoryPath);
+                try
+                {
+                    Process.Start(CurrentSelection.FullName);
+                }
+                catch
+                {
+                    CustomDialog.ErrorMessage("ERROR: Could not open file.", "Error");
+                }
+            }
+        }
+
+        public void ListContent()
+        {
+            DirectoryInfo[] subDirectories = GetSubdirectories();
+            FileInfo[] files = GetFiles();
+
+            if (subDirectories == null || files == null)
+                return;
+
+            ClearContent();
+            NaviBox.Columns[0].Text = CurrentDirectoryPath;
+
+            if (CurrentDirectoryPath != @"C:\\")
+            {
+                NaviBox.Items.Add("..");
+            }
+
+            var imageList = new ImageList();
+            NaviBox.SmallImageList = imageList;
+            string path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"..\..\Resources\");
+            String[] ImageFiles = Directory.GetFiles(path);
+
+            foreach (var file in ImageFiles)
+            {
+                //Add images to Imagelist
+                imageList.Images.Add(Image.FromFile(file));
+            }
+
+            foreach (DirectoryInfo item in subDirectories)
+            {
+                string[] row = new string[4];
+                row[0] = item.Name;
+                row[1] = "<DIR>";
+                string size = (String.Format("{0:N0} KB", NavigatorBoxStatic.DirSize(new DirectoryInfo(item.FullName)) / 1024));
+                if (size != "0 KB") row[2] = size; else row[2] = "Unknown";
+                row[3] = item.LastWriteTime.ToShortDateString() + item.LastWriteTime.ToLongTimeString();
+                ListViewItem folderItem = new ListViewItem(row);
+                folderItem.BackColor = Color.LightGoldenrodYellow;
+                NaviBox.Items.Add(folderItem);
+                folderItem.ImageIndex = 1;
+            }
+
+            foreach (FileInfo item in files)
+            {
+                string[] row = new string[4];
+                row[0] = item.Name; // Path.GetFileNameWithoutExtension(item.Name);
+                row[1] = item.Extension.ToUpper();
+                row[2] = String.Format("{0:N0} KB", NavigatorBoxStatic.FileSize(new FileInfo(item.FullName)) / 1024);
+                row[3] = item.CreationTime.ToShortDateString() + item.CreationTime.ToLongTimeString();
+                ListViewItem fileItem = new ListViewItem(row);
+                fileItem.BackColor = Color.LightCyan;
+                NaviBox.Items.Add(fileItem);
+                fileItem.ImageIndex = 0;
+            }
+
+            NaviBox.Items[0].Selected = true;
+            NaviBox.Items[0].Focused = true;
         }
 
         public bool KeyPressed(Keys key)
@@ -222,32 +245,33 @@ namespace SanityArchiver
                 NaviBox.SelectedItems[0].BeginEdit();
             }
 
+            if (key == Keys.F3)
+            {
+                NavigatorBoxStatic.PackFile(NavigatorBoxStatic.MakeFileInfoFromPath());
+            }
+
+            if (key == Keys.F4)
+            {
+                NavigatorBoxStatic.UnpackFile(NavigatorBoxStatic.MakeFileInfoFromPath());
+            }
+
             if (key == Keys.F5)
             {
-                NavigatorBoxStatic.ShowFileProperties(CurrentDirectoryPath + NaviBox.SelectedItems[0].Text);
+                NavigatorBoxStatic.ShowFileProperties(SanityCommanderForm.SelectedFilePath);
             }
 
             if (key == Keys.Delete)
             {
-                if (IsItADirectory(SanityCommanderForm.selectedFilePath))
+                if (NavigatorBoxStatic.IsItADirectory(SanityCommanderForm.SelectedFilePath))
                 {
-                    NavigatorBoxStatic.DeleteDirectory(SanityCommanderForm.selectedFilePath);
+                    NavigatorBoxStatic.DeleteDirectory(SanityCommanderForm.SelectedFilePath);
                 }
-                NavigatorBoxStatic.DeleteFile(SanityCommanderForm.selectedFilePath);
+                NavigatorBoxStatic.DeleteFile(SanityCommanderForm.SelectedFilePath);
             }
 
             if (key == Keys.Escape)
             {
                 Application.Exit();
-            }
-            return false;
-        }
-
-        public bool KeyUp(Keys key)
-        {
-            if (key == Keys.Up || key == Keys.Down)
-            {
-                return true;
             }
             return false;
         }
@@ -260,44 +284,6 @@ namespace SanityArchiver
         private void NaviBoxEvent_Click(object sender, EventArgs e)
         {
             SelectItem();
-        }
-
-        private void NaviBoxEvent_AfterLabelEdit(object sender, LabelEditEventArgs e)
-        {
-            string newName = CurrentDirectoryPath + e.Label;
-
-            // Determine if label is changed by checking for null.
-            if (e.Label == null)
-                return;
-            // ASCIIEncoding is used to determine if a number character has been entered.
-            ASCIIEncoding AE = new ASCIIEncoding();
-            // Convert the new label to a character array.
-            char[] temp = e.Label.ToCharArray();
-
-            // Check each character in the new label to determine if it is a number.
-            for (int x = 0; x < temp.Length; x++)
-            {
-                // Encode the character from the character array to its ASCII code.
-                byte[] bc = AE.GetBytes(temp[x].ToString());
-
-                // Determine if the ASCII code is within the valid range of numerical values.
-                if (bc[0] > 47 && bc[0] < 58)
-                {
-                    // Cancel the event and return the lable to its original state.
-                    e.CancelEdit = true;
-                    // Display a MessageBox alerting the user that numbers are not allowed.
-                    MessageBox.Show("The text for the item cannot contain numerical values.");
-                    // Break out of the loop and exit.
-                    return;
-                }
-            }
-            // after labeledit
-            if (IsItADirectory(SanityCommanderForm.selectedFilePath))
-            {
-                NavigatorBoxStatic.RenameDirectory(SanityCommanderForm.selectedFilePath, newName);
-            }
-            NavigatorBoxStatic.RenameFile(SanityCommanderForm.selectedFilePath, newName);
-            SanityCommanderForm.selectedFilePath = newName;
         }
 
         private void NaviBoxEvent_KeyDown(object sender, KeyEventArgs e)
@@ -314,6 +300,131 @@ namespace SanityArchiver
             {
                 SelectItem();
             }
+        }
+
+        private void NaviBoxEvent_DragLeave(object sender, EventArgs e)
+        {
+            NaviBox.InsertionMark.Index = -1;
+        }
+
+        private void NaviBoxEvent_ItemDrag(object sender, ItemDragEventArgs e)
+        {
+            NaviBox.DoDragDrop(NaviBox.SelectedItems, DragDropEffects.Move);
+        }
+
+        private void NaviBoxEvent_DragEnter(object sender, DragEventArgs e)
+        {
+            int len = e.Data.GetFormats().Length - 1;
+            int i;
+            for (i = 0; i <= len; i++)
+            {
+                if (e.Data.GetFormats()[i].Equals("System.Windows.Forms.ListView+SelectedListViewItemCollection"))
+                {
+                    e.Effect = DragDropEffects.Move;
+                }
+            }
+        }
+
+        private void NaviBoxEvent_DragDrop(object sender, DragEventArgs e)
+        {
+            if (NaviBox.SelectedItems.Count == 0)
+            {
+                return;
+            }
+            Point cp = NaviBox.PointToClient(new Point(e.X, e.Y));
+            ListViewItem dragToItem = NaviBox.GetItemAt(cp.X, cp.Y);
+
+            if (dragToItem == null)
+            {
+                return;
+            }
+
+            int dragIndex = dragToItem.Index;
+            ListViewItem[] selection = new ListViewItem[NaviBox.SelectedItems.Count];
+
+            for (int i = 0; i <= NaviBox.SelectedItems.Count - 1; i++)
+            {
+                selection[i] = NaviBox.SelectedItems[i];
+            }
+            for (int i = 0; i < selection.GetLength(0); i++)
+            {
+                ListViewItem dragItem = selection[i];
+                int itemIndex = dragIndex;
+                if (itemIndex == dragItem.Index)
+                {
+                    return;
+                }
+                if (dragItem.Index < itemIndex)
+                    itemIndex++;
+                else
+                    itemIndex = dragIndex + i;
+            }
+
+            int targetIndex = NaviBox.InsertionMark.Index;
+
+            if (targetIndex == -1)
+            {
+                return;
+            }
+
+            if (NaviBox.InsertionMark.AppearsAfterItem)
+            {
+                targetIndex++;
+            }
+            // NavigatorBoxStatic.CopyFile(SanityCommanderForm.SelectedFilePath + @"\" + NaviBox.SelectedItems[0].Text , SanityCommanderForm.TargetPath + @"\" + NaviBox.SelectedItems[0].Text + @"\");
+        }
+
+        private void NaviBoxEvent_DragOver(object sender, DragEventArgs e)
+        {
+            Point targetPoint = NaviBox.PointToClient(new Point(e.X, e.Y));
+
+            int targetIndex = NaviBox.InsertionMark.NearestIndex(targetPoint);
+
+            if (targetIndex > -1)
+            {
+                Rectangle itemBounds = NaviBox.GetItemRect(targetIndex);
+                if (targetPoint.X > itemBounds.Left + (itemBounds.Width / 2))
+                {
+                    NaviBox.InsertionMark.AppearsAfterItem = true;
+                }
+                else
+                {
+                    NaviBox.InsertionMark.AppearsAfterItem = false;
+                }
+            }
+            NaviBox.InsertionMark.Index = targetIndex;
+            // setting target path to the location of the cursor
+            Point cp = NaviBox.PointToClient(new Point(e.X, e.Y));
+            ListViewItem dragToItem = NaviBox.GetItemAt(cp.X, cp.Y);
+            SanityCommanderForm.TargetPath = SanityCommanderForm.SelectedFilePath + @"\" + dragToItem.Text;
+        }
+
+        private void NaviBoxEvent_AfterLabelEdit(object sender, LabelEditEventArgs e)
+        {
+            string newName = CurrentDirectoryPath + e.Label;
+
+            if (e.Label == null)
+                return;
+            ASCIIEncoding AE = new ASCIIEncoding();
+            char[] temp = e.Label.ToCharArray();
+
+            for (int x = 0; x < temp.Length; x++)
+            {
+                byte[] bc = AE.GetBytes(temp[x].ToString());
+
+                if (bc[0] > 47 && bc[0] < 58)
+                {
+                    e.CancelEdit = true;
+                    MessageBox.Show("The text for the item cannot contain numerical values.");
+                    return;
+                }
+            }
+            if (NavigatorBoxStatic.IsItADirectory(SanityCommanderForm.SelectedFilePath))
+            {
+                NavigatorBoxStatic.RenameDirectory(SanityCommanderForm.SelectedFilePath, newName);
+            }
+            NavigatorBoxStatic.RenameFile(SanityCommanderForm.SelectedFilePath, newName);
+            SanityCommanderForm.SelectedFilePath = newName;
         }
     }
 }

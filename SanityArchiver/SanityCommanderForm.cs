@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.IO;
 using System.Windows.Forms;
 
 
@@ -11,21 +10,22 @@ namespace SanityArchiver
     public partial class SanityCommanderForm : Form
     {
         public static List<NavigatorBox> naviBoxes = new List<NavigatorBox>();
-        public static string selectedFilePath;
+        public static string SelectedFilePath { get; set; }
+        public static string TargetPath { get; set; }
 
         public SanityCommanderForm()
         {
             InitializeComponent();
         }
 
-        public void CreateNewNaviBox()
+        private void CreateNewNaviBox()
         {
             string newNaviBoxName = "naviBox" + naviBoxes.Count.ToString();
             ListView newListView = new ListView();
             NavigatorBox newNaviBox = new NavigatorBox(newListView);
             newNaviBox.NaviBox.Name = newNaviBoxName;
             newNaviBox.NaviBox.View = View.Details;
-            int numberOfNaviboxes = CalculateNumberOfNaviBoxes();
+            int numberOfNaviboxes = NavigatorBoxStatic.CalculateNumberOfNaviBoxes();
             newNaviBox.NaviBox.Size = new Size(ClientRectangle.Size.Width / (naviBoxes.Count + numberOfNaviboxes), ClientRectangle.Size.Height);
             newNaviBox.NaviBox.Location = new Point(ClientRectangle.Location.X, menuStrip1.Size.Height + 1);
             newNaviBox.Setup();
@@ -36,7 +36,7 @@ namespace SanityArchiver
             RefreshNaviboxView();
         }
 
-        public void DeleteNaviBox()
+        private void DeleteNaviBox()
         {
             if (naviBoxes.Count > 1)
             {
@@ -47,7 +47,7 @@ namespace SanityArchiver
             }
             else
             {
-                CustomDialogs.ErrorMessage("You only have one panel.", "Error");
+                CustomDialog.ErrorMessage("You only have one panel.", "Error");
             }
             RefreshNaviboxView();
         }
@@ -79,21 +79,6 @@ namespace SanityArchiver
             return ClientRectangle.Location.X / naviBoxes.Count;
         }
 
-        private int CalculateNumberOfNaviBoxes()
-        {
-            if (naviBoxes.Count == 0)
-            {
-                return 1;
-            }
-            return 0;
-        }
-
-        private FileInfo MakeFileInfoFromPath()
-        {
-            FileInfo fi = new FileInfo(selectedFilePath);
-            return fi;
-        }
-
         private void SanityCommanderForm_Load(object sender, EventArgs e)
         {
             CreateNewNaviBox();
@@ -123,22 +108,32 @@ namespace SanityArchiver
 
         private void propertiesToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            NavigatorBoxStatic.ShowFileProperties(selectedFilePath);
+            NavigatorBoxStatic.ShowFileProperties(SelectedFilePath);
         }
 
         private void packToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            NavigatorBoxStatic.PackFile(MakeFileInfoFromPath());
+            NavigatorBoxStatic.PackFile(NavigatorBoxStatic.MakeFileInfoFromPath());
         }
 
         private void unpackToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            NavigatorBoxStatic.UnpackFile(MakeFileInfoFromPath());
+            NavigatorBoxStatic.UnpackFile(NavigatorBoxStatic.MakeFileInfoFromPath());
         }
 
         private void deleteDELToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            NavigatorBoxStatic.DeleteFile(selectedFilePath);
+            NavigatorBoxStatic.DeleteFile(SelectedFilePath);
+        }
+
+        private void encryptFileToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            NavigatorBoxStatic.CheckIfEncryptable();
+        }
+
+        private void decryptFileToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            NavigatorBoxStatic.CheckIfDecryptable();
         }
     }
 }
