@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Text;
 using System.Windows.Forms;
 
 namespace SanityArchiver
@@ -25,6 +26,7 @@ namespace SanityArchiver
             NaviBox.FullRowSelect = true;
             NaviBox.View = View.Details;
             NaviBox.AllowColumnReorder = true;
+            NaviBox.LabelEdit = true;
             AddHeader();
             ListContent();
             NaviBox.Refresh();
@@ -32,6 +34,7 @@ namespace SanityArchiver
             NaviBox.DoubleClick += new EventHandler(NaviBoxEvent_DoubleClick);
             NaviBox.KeyDown += new KeyEventHandler(NaviBoxEvent_KeyDown);
             NaviBox.KeyUp += new KeyEventHandler(NaviBoxEvent_KeyUp);
+            NaviBox.AfterLabelEdit += new LabelEditEventHandler(NaviBoxEvent_AfterLabelEdit);
         }
 
         public void NavigateOneDirectoryUp()
@@ -103,74 +106,9 @@ namespace SanityArchiver
             }
         }
 
-        public bool KeyPressed(Keys key)
-        {
-            if (key == Keys.Enter)
-            {
-                return true;
-            }
-
-            if (key == Keys.Back)
-            {
-                NavigateOneDirectoryUp();
-            }
-
-            if (key == Keys.F5)
-            {
-                NavigatorBoxStatic.ShowFileProperties(CurrentDirectoryPath + NaviBox.SelectedItems[0].Text);
-            }
-            
-            if (key == Keys.Delete)
-            {
-                if (IsItADirectory(SanityCommanderForm.selectedFilePath))
-                {
-                    NavigatorBoxStatic.DeleteDirectory(SanityCommanderForm.selectedFilePath);
-                }
-                NavigatorBoxStatic.DeleteFile(SanityCommanderForm.selectedFilePath);
-            }
-
-            return false;
-        }
-
-        public bool KeyUp(Keys key)
-        {
-            if (key == Keys.Up || key == Keys.Down)
-            {
-                return true;
-            }
-            return false;
-        }
-
         private void SelectItem()
         {
             SanityCommanderForm.selectedFilePath = CurrentDirectoryPath + NaviBox.SelectedItems[0].Text;
-            Console.WriteLine(SanityCommanderForm.selectedFilePath);
-        }
-
-        private void NaviBoxEvent_DoubleClick(object sender, EventArgs e)
-        {
-            SelectAction();
-        }
-
-        private void NaviBoxEvent_Click(object sender, EventArgs e)
-        {
-            SelectItem();
-        }
-
-        private void NaviBoxEvent_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (KeyPressed(e.KeyCode))
-            {
-                SelectAction();
-            }
-        }
-
-        private void NaviBoxEvent_KeyUp(object sender, KeyEventArgs e)
-        {
-            if (KeyUp(e.KeyCode))
-            {
-                SelectItem();
-            }
         }
 
         private void AddHeader()
@@ -265,6 +203,117 @@ namespace SanityArchiver
         private void ClearContent()
         {
             NaviBox.Items.Clear();
+        }
+
+        public bool KeyPressed(Keys key)
+        {
+            if (key == Keys.Enter)
+            {
+                return true;
+            }
+
+            if (key == Keys.Back)
+            {
+                NavigateOneDirectoryUp();
+            }
+
+            if (key == Keys.F2 && NaviBox.SelectedItems.Count > 0)
+            {
+                NaviBox.SelectedItems[0].BeginEdit();
+            }
+
+            if (key == Keys.F5)
+            {
+                NavigatorBoxStatic.ShowFileProperties(CurrentDirectoryPath + NaviBox.SelectedItems[0].Text);
+            }
+
+            if (key == Keys.Delete)
+            {
+                if (IsItADirectory(SanityCommanderForm.selectedFilePath))
+                {
+                    NavigatorBoxStatic.DeleteDirectory(SanityCommanderForm.selectedFilePath);
+                }
+                NavigatorBoxStatic.DeleteFile(SanityCommanderForm.selectedFilePath);
+            }
+
+            if (key == Keys.Escape)
+            {
+                Application.Exit();
+            }
+            return false;
+        }
+
+        public bool KeyUp(Keys key)
+        {
+            if (key == Keys.Up || key == Keys.Down)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        private void NaviBoxEvent_DoubleClick(object sender, EventArgs e)
+        {
+            SelectAction();
+        }
+
+        private void NaviBoxEvent_Click(object sender, EventArgs e)
+        {
+            SelectItem();
+        }
+
+        private void NaviBoxEvent_AfterLabelEdit(object sender, LabelEditEventArgs e)
+        {
+            string newName = CurrentDirectoryPath + e.Label;
+
+            // Determine if label is changed by checking for null.
+            if (e.Label == null)
+                return;
+            // ASCIIEncoding is used to determine if a number character has been entered.
+            ASCIIEncoding AE = new ASCIIEncoding();
+            // Convert the new label to a character array.
+            char[] temp = e.Label.ToCharArray();
+
+            // Check each character in the new label to determine if it is a number.
+            for (int x = 0; x < temp.Length; x++)
+            {
+                // Encode the character from the character array to its ASCII code.
+                byte[] bc = AE.GetBytes(temp[x].ToString());
+
+                // Determine if the ASCII code is within the valid range of numerical values.
+                if (bc[0] > 47 && bc[0] < 58)
+                {
+                    // Cancel the event and return the lable to its original state.
+                    e.CancelEdit = true;
+                    // Display a MessageBox alerting the user that numbers are not allowed.
+                    MessageBox.Show("The text for the item cannot contain numerical values.");
+                    // Break out of the loop and exit.
+                    return;
+                }
+            }
+            // after labeledit
+            if (IsItADirectory(SanityCommanderForm.selectedFilePath))
+            {
+                NavigatorBoxStatic.RenameDirectory(SanityCommanderForm.selectedFilePath, newName);
+            }
+            NavigatorBoxStatic.RenameFile(SanityCommanderForm.selectedFilePath, newName);
+            SanityCommanderForm.selectedFilePath = newName;
+        }
+
+        private void NaviBoxEvent_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (KeyPressed(e.KeyCode))
+            {
+                SelectAction();
+            }
+        }
+
+        private void NaviBoxEvent_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (KeyUp(e.KeyCode))
+            {
+                SelectItem();
+            }
         }
     }
 }

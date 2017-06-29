@@ -32,12 +32,12 @@
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.toolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.packToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.unpackToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.propertiesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.newPanelToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.closePanelToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.renameF2ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.packToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.unpackToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.propertiesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.deleteDELToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -77,6 +77,26 @@
             this.exitToolStripMenuItem.Text = "Exit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
+            // newPanelToolStripMenuItem
+            // 
+            this.newPanelToolStripMenuItem.Name = "newPanelToolStripMenuItem";
+            this.newPanelToolStripMenuItem.Size = new System.Drawing.Size(75, 46);
+            this.newPanelToolStripMenuItem.Text = "New Panel";
+            this.newPanelToolStripMenuItem.Click += new System.EventHandler(this.newPanelToolStripMenuItem1_Click);
+            // 
+            // closePanelToolStripMenuItem
+            // 
+            this.closePanelToolStripMenuItem.Name = "closePanelToolStripMenuItem";
+            this.closePanelToolStripMenuItem.Size = new System.Drawing.Size(80, 46);
+            this.closePanelToolStripMenuItem.Text = "Close Panel";
+            this.closePanelToolStripMenuItem.Click += new System.EventHandler(this.closePanelToolStripMenuItem_Click);
+            // 
+            // renameF2ToolStripMenuItem
+            // 
+            this.renameF2ToolStripMenuItem.Name = "renameF2ToolStripMenuItem";
+            this.renameF2ToolStripMenuItem.Size = new System.Drawing.Size(85, 46);
+            this.renameF2ToolStripMenuItem.Text = "Rename (F2)";
+            // 
             // packToolStripMenuItem
             // 
             this.packToolStripMenuItem.Name = "packToolStripMenuItem";
@@ -97,26 +117,6 @@
             this.propertiesToolStripMenuItem.Size = new System.Drawing.Size(95, 46);
             this.propertiesToolStripMenuItem.Text = "Properties (F5)";
             this.propertiesToolStripMenuItem.Click += new System.EventHandler(this.propertiesToolStripMenuItem_Click);
-            // 
-            // newPanelToolStripMenuItem
-            // 
-            this.newPanelToolStripMenuItem.Name = "newPanelToolStripMenuItem";
-            this.newPanelToolStripMenuItem.Size = new System.Drawing.Size(98, 46);
-            this.newPanelToolStripMenuItem.Text = "New Panel (F1)";
-            this.newPanelToolStripMenuItem.Click += new System.EventHandler(this.newPanelToolStripMenuItem1_Click);
-            // 
-            // closePanelToolStripMenuItem
-            // 
-            this.closePanelToolStripMenuItem.Name = "closePanelToolStripMenuItem";
-            this.closePanelToolStripMenuItem.Size = new System.Drawing.Size(142, 46);
-            this.closePanelToolStripMenuItem.Text = "Close Panel (CTRL+ F1)";
-            this.closePanelToolStripMenuItem.Click += new System.EventHandler(this.closePanelToolStripMenuItem_Click);
-            // 
-            // renameF2ToolStripMenuItem
-            // 
-            this.renameF2ToolStripMenuItem.Name = "renameF2ToolStripMenuItem";
-            this.renameF2ToolStripMenuItem.Size = new System.Drawing.Size(85, 46);
-            this.renameF2ToolStripMenuItem.Text = "Rename (F2)";
             // 
             // deleteDELToolStripMenuItem
             // 

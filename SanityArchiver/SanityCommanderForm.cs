@@ -18,15 +18,37 @@ namespace SanityArchiver
             InitializeComponent();
         }
 
-        private void SanityCommanderForm_Load(object sender, EventArgs e)
+        public void CreateNewNaviBox()
         {
-            CreateNewNaviBox();
-            CreateNewNaviBox();
+            string newNaviBoxName = "naviBox" + naviBoxes.Count.ToString();
+            ListView newListView = new ListView();
+            NavigatorBox newNaviBox = new NavigatorBox(newListView);
+            newNaviBox.NaviBox.Name = newNaviBoxName;
+            newNaviBox.NaviBox.View = View.Details;
+            int numberOfNaviboxes = CalculateNumberOfNaviBoxes();
+            newNaviBox.NaviBox.Size = new Size(ClientRectangle.Size.Width / (naviBoxes.Count + numberOfNaviboxes), ClientRectangle.Size.Height);
+            newNaviBox.NaviBox.Location = new Point(ClientRectangle.Location.X, menuStrip1.Size.Height + 1);
+            newNaviBox.Setup();
+
+            naviBoxes.Add(newNaviBox);
+            Controls.Add(newNaviBox.NaviBox);
+
             RefreshNaviboxView();
         }
 
-        private void SanityCommanderForm_SizeChanged(object sender, EventArgs e)
+        public void DeleteNaviBox()
         {
+            if (naviBoxes.Count > 1)
+            {
+                naviBoxes.RemoveAt(naviBoxes.Count - 1);
+                string controlToDelete = "naviBox" + (naviBoxes.Count).ToString();
+                Control ctn = Controls[controlToDelete];
+                Controls.Remove(ctn);
+            }
+            else
+            {
+                CustomDialogs.ErrorMessage("You only have one panel.", "Error");
+            }
             RefreshNaviboxView();
         }
 
@@ -52,29 +74,6 @@ namespace SanityArchiver
             }
         }
 
-        private void CreateNewNaviBox()
-        {
-            string newNaviBoxName = "naviBox" + naviBoxes.Count.ToString();
-            ListView newListView = new ListView();
-            NavigatorBox newNaviBox = new NavigatorBox(newListView);
-            newNaviBox.NaviBox.Name = newNaviBoxName;
-            newNaviBox.NaviBox.View = View.Details;
-            int numberOfNaviboxes = CalculateNumberOfNaviBoxes();
-            newNaviBox.NaviBox.Size = new Size(ClientRectangle.Size.Width / (naviBoxes.Count + numberOfNaviboxes), ClientRectangle.Size.Height);
-            newNaviBox.NaviBox.Location = new Point(ClientRectangle.Location.X, menuStrip1.Size.Height + 1);
-            newNaviBox.Setup();
-
-            naviBoxes.Add(newNaviBox);
-            Controls.Add(newNaviBox.NaviBox);
-
-            RefreshNaviboxView();
-        }
-
-        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Application.Exit();
-        }
-
         private int CalculateStartingWidth()
         {
             return ClientRectangle.Location.X / naviBoxes.Count;
@@ -89,6 +88,24 @@ namespace SanityArchiver
             return 0;
         }
 
+        private FileInfo MakeFileInfoFromPath()
+        {
+            FileInfo fi = new FileInfo(selectedFilePath);
+            return fi;
+        }
+
+        private void SanityCommanderForm_Load(object sender, EventArgs e)
+        {
+            CreateNewNaviBox();
+            CreateNewNaviBox();
+            RefreshNaviboxView();
+        }
+
+        private void SanityCommanderForm_SizeChanged(object sender, EventArgs e)
+        {
+            RefreshNaviboxView();
+        }
+
         private void newPanelToolStripMenuItem1_Click(object sender, EventArgs e)
         {
             CreateNewNaviBox();
@@ -99,20 +116,9 @@ namespace SanityArchiver
             DeleteNaviBox();
         }
 
-        public void DeleteNaviBox()
+        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (naviBoxes.Count > 1)
-            {
-                naviBoxes.RemoveAt(naviBoxes.Count - 1);
-                string controlToDelete = "naviBox" + (naviBoxes.Count).ToString();
-                Control ctn = Controls[controlToDelete];
-                Controls.Remove(ctn);
-            }
-            else
-            {
-                CustomDialogs.ErrorMessage("You only have one panel.", "Error");
-            }
-            RefreshNaviboxView();
+            Application.Exit();
         }
 
         private void propertiesToolStripMenuItem_Click(object sender, EventArgs e)
@@ -133,12 +139,6 @@ namespace SanityArchiver
         private void deleteDELToolStripMenuItem_Click(object sender, EventArgs e)
         {
             NavigatorBoxStatic.DeleteFile(selectedFilePath);
-        }
-
-        private FileInfo MakeFileInfoFromPath()
-        {
-            FileInfo fi = new FileInfo(selectedFilePath);
-            return fi;
         }
     }
 }

@@ -39,6 +39,57 @@ namespace SanityArchiver
             public IntPtr hProcess;
         }
 
+        public static int GetTaskbarHeight()
+        {
+            return Screen.PrimaryScreen.Bounds.Height - Screen.PrimaryScreen.WorkingArea.Height;
+        }
+
+        public static void RefreshNaviBoxContent()
+        {
+            foreach (NavigatorBox item in SanityCommanderForm.naviBoxes)
+            {
+                item.ListContent();
+            }
+        }
+
+        public static bool ShowFileProperties(string Filename)
+        {
+            SHELLEXECUTEINFO info = new SHELLEXECUTEINFO();
+            info.cbSize = Marshal.SizeOf(info);
+            info.lpVerb = "properties";
+            info.lpFile = Filename;
+            info.nShow = SW_SHOW;
+            info.fMask = SEE_MASK_INVOKEIDLIST;
+            return ShellExecuteEx(ref info);
+        }
+
+        public static void DeleteFile(string path)
+        {
+            try
+            {
+                File.Delete(path);
+            }
+            catch { CustomDialogs.ErrorMessage("Error: Access denied.", "Error"); }
+            RefreshNaviBoxContent();
+        }
+
+        public static void DeleteDirectory(string path)
+        {
+            try
+            {
+                Directory.Delete(path);
+            }
+            catch { CustomDialogs.ErrorMessage("Error: Access denied.", "Error"); }
+            RefreshNaviBoxContent();
+        }
+
+        public static long FileSize(FileInfo f)
+        {
+            long size = 0;
+            size += f.Length;
+            return size;
+        }
+
         public static long DirSize(DirectoryInfo d)
         {
             long size = 0;
@@ -54,24 +105,6 @@ namespace SanityArchiver
             }
             catch { }
             return size;
-        }
-
-        public static long FileSize(FileInfo f)
-        {
-            long size = 0;
-            size += f.Length;
-            return size;
-        }
-
-        public static bool ShowFileProperties(string Filename)
-        {
-            SHELLEXECUTEINFO info = new SHELLEXECUTEINFO();
-            info.cbSize = Marshal.SizeOf(info);
-            info.lpVerb = "properties";
-            info.lpFile = Filename;
-            info.nShow = SW_SHOW;
-            info.fMask = SEE_MASK_INVOKEIDLIST;
-            return ShellExecuteEx(ref info);
         }
 
         public static void PackFile(FileInfo fi)
@@ -123,37 +156,24 @@ namespace SanityArchiver
             RefreshNaviBoxContent();
         }
 
-        public static int GetTaskbarHeight()
+        public static void RenameFile(string oldName, string newName)
         {
-            return Screen.PrimaryScreen.Bounds.Height - Screen.PrimaryScreen.WorkingArea.Height;
-        }
-
-        public static void DeleteFile(string path)
-        {
-            try
+            if (File.Exists(newName))
             {
-                File.Delete(path);
+                File.Delete(newName);
             }
-            catch { CustomDialogs.ErrorMessage("Error: Access denied.", "Error"); }
+            //File.Move(oldName, newName);
             RefreshNaviBoxContent();
         }
 
-        public static void DeleteDirectory(string path)
+        public static void RenameDirectory(string oldName, string newName)
         {
-            try
+            if (Directory.Exists(newName))
             {
-                Directory.Delete(path);
+                Directory.Delete(newName);
             }
-            catch { CustomDialogs.ErrorMessage("Error: Access denied.", "Error"); }
+            Directory.Move(oldName, newName);
             RefreshNaviBoxContent();
-        }
-
-        public static void RefreshNaviBoxContent()
-        {
-            foreach (NavigatorBox item in SanityCommanderForm.naviBoxes)
-            {
-                item.ListContent();
-            }
         }
     }
 }
