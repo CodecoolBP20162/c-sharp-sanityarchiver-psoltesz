@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 namespace SanityArchiver
 {
-    class NavigatorBoxStatic
+    class NavigatorBoxOperations
     {
         private const int SW_SHOW = 5;
         private const uint SEE_MASK_INVOKEIDLIST = 12;

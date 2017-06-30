@@ -25,7 +25,7 @@ namespace SanityArchiver
             NavigatorBox newNaviBox = new NavigatorBox(newListView);
             newNaviBox.NaviBox.Name = newNaviBoxName;
             newNaviBox.NaviBox.View = View.Details;
-            int numberOfNaviboxes = NavigatorBoxStatic.CalculateNumberOfNaviBoxes();
+            int numberOfNaviboxes = NavigatorBoxOperations.CalculateNumberOfNaviBoxes();
             newNaviBox.NaviBox.Size = new Size(ClientRectangle.Size.Width / (naviBoxes.Count + numberOfNaviboxes), ClientRectangle.Size.Height);
             newNaviBox.NaviBox.Location = new Point(ClientRectangle.Location.X, menuStrip1.Size.Height + 1);
             newNaviBox.Setup();
@@ -58,7 +58,7 @@ namespace SanityArchiver
 
             foreach (NavigatorBox item in naviBoxes)
             {
-                item.NaviBox.Size = new Size(ClientRectangle.Size.Width / naviBoxes.Count, ClientRectangle.Size.Height - (NavigatorBoxStatic.GetTaskbarHeight() + 10));
+                item.NaviBox.Size = new Size(ClientRectangle.Size.Width / naviBoxes.Count, ClientRectangle.Size.Height - (NavigatorBoxOperations.GetTaskbarHeight() + 10));
                 item.NaviBox.Location = new Point(startingWidth, menuStrip1.Size.Height + 1);
 
                 startingWidth = startingWidth + ClientRectangle.Size.Width / naviBoxes.Count;
@@ -108,32 +108,32 @@ namespace SanityArchiver
 
         private void propertiesToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            NavigatorBoxStatic.ShowFileProperties(SelectedFilePath);
+            NavigatorBoxOperations.ShowFileProperties(SelectedFilePath);
         }
 
         private void packToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            NavigatorBoxStatic.PackFile(NavigatorBoxStatic.MakeFileInfoFromPath());
+            NavigatorBoxOperations.PackFile(NavigatorBoxOperations.MakeFileInfoFromPath());
         }
 
         private void unpackToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            NavigatorBoxStatic.UnpackFile(NavigatorBoxStatic.MakeFileInfoFromPath());
+            NavigatorBoxOperations.UnpackFile(NavigatorBoxOperations.MakeFileInfoFromPath());
         }
 
         private void deleteDELToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            NavigatorBoxStatic.DeleteFile(SelectedFilePath);
+            NavigatorBoxOperations.DeleteFile(SelectedFilePath);
         }
 
         private void encryptFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            NavigatorBoxStatic.CheckIfEncryptable();
+            NavigatorBoxOperations.CheckIfEncryptable();
         }
 
         private void decryptFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            NavigatorBoxStatic.CheckIfDecryptable();
+            NavigatorBoxOperations.CheckIfDecryptable();
         }
     }
 }

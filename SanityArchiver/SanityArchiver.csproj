@@ -56,7 +56,7 @@
       <DependentUpon>SanityCommanderForm.cs</DependentUpon>
     </Compile>
     <Compile Include="NavigatorBox.cs" />
-    <Compile Include="NavigatorBoxStatic.cs" />
+    <Compile Include="NavigatorBoxOperations.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="SanityCommanderForm.resx">
