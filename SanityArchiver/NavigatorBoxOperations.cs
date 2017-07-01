@@ -130,11 +130,34 @@ namespace SanityArchiver
             return 0;
         }
 
-        public static void CopyFile(string oldPath, string newPath)
+        public static void CopyFile(string sourcePath, string targetPath)
         {
             try
             {
-                File.Copy(oldPath, newPath, true);
+                File.Copy(sourcePath, targetPath, true);
+                RefreshNaviBoxContent();
+            }
+            catch { CustomDialog.ErrorMessage("Copy unsuccessful.", "Error"); }
+        }
+
+        public static void CopyDirectory(string sourcePath, string targetPath)
+        {
+            try
+            {
+                if (!Directory.Exists(targetPath))
+                {
+                    Directory.CreateDirectory(targetPath);
+                }
+
+                string fileName;
+                string destFile;
+                string[] files = Directory.GetFiles(sourcePath);
+                foreach (string s in files)
+                {
+                    fileName = Path.GetFileName(s);
+                    destFile = Path.Combine(targetPath, fileName);
+                    File.Copy(s, destFile, true);
+                }
                 RefreshNaviBoxContent();
             }
             catch { CustomDialog.ErrorMessage("Copy unsuccessful.", "Error"); }
@@ -145,7 +168,7 @@ namespace SanityArchiver
             FileInfo fi = null;
             try
             {
-                fi = new FileInfo(SanityCommanderForm.SelectedFilePath);
+                fi = new FileInfo(SanityCommanderForm.SelectionPath);
             }
             catch { }
             return fi;
@@ -198,11 +221,11 @@ namespace SanityArchiver
 
         public static void CheckIfEncryptable()
         {
-            if (!IsItADirectory(SanityCommanderForm.SelectedFilePath))
+            if (!IsItADirectory(SanityCommanderForm.SelectionPath))
             {
                 try
                 {
-                    EncryptFile(SanityCommanderForm.SelectedFilePath);
+                    EncryptFile(SanityCommanderForm.SelectionPath);
                     return;
                 }
                 catch (Exception ex)
@@ -215,11 +238,11 @@ namespace SanityArchiver
 
         public static void CheckIfDecryptable()
         {
-            if (!IsItADirectory(SanityCommanderForm.SelectedFilePath))
+            if (!IsItADirectory(SanityCommanderForm.SelectionPath))
             {
                 try
                 {
-                    DecryptFile(SanityCommanderForm.SelectedFilePath);
+                    DecryptFile(SanityCommanderForm.SelectionPath);
                     return;
                 }
                 catch (Exception ex)

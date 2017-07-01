@@ -70,7 +70,7 @@ namespace SanityArchiver
         {
             try
             {
-                SanityCommanderForm.SelectedFilePath = CurrentDirectoryPath + NaviBox.SelectedItems[0].Text;
+                SanityCommanderForm.SelectionPath = CurrentDirectoryPath + NaviBox.SelectedItems[0].Text;
             }
             catch { }
         }
@@ -258,16 +258,16 @@ namespace SanityArchiver
 
             if (key == Keys.F5)
             {
-                NavigatorBoxOperations.ShowFileProperties(SanityCommanderForm.SelectedFilePath);
+                NavigatorBoxOperations.ShowFileProperties(SanityCommanderForm.SelectionPath);
             }
 
             if (key == Keys.Delete)
             {
-                if (NavigatorBoxOperations.IsItADirectory(SanityCommanderForm.SelectedFilePath))
+                if (NavigatorBoxOperations.IsItADirectory(SanityCommanderForm.SelectionPath))
                 {
-                    NavigatorBoxOperations.DeleteDirectory(SanityCommanderForm.SelectedFilePath);
+                    NavigatorBoxOperations.DeleteDirectory(SanityCommanderForm.SelectionPath);
                 }
-                NavigatorBoxOperations.DeleteFile(SanityCommanderForm.SelectedFilePath);
+                NavigatorBoxOperations.DeleteFile(SanityCommanderForm.SelectionPath);
             }
 
             if (key == Keys.Escape)
@@ -310,6 +310,7 @@ namespace SanityArchiver
 
         private void NaviBoxEvent_ItemDrag(object sender, ItemDragEventArgs e)
         {
+            SanityCommanderForm.SelectionPath = CurrentDirectoryPath + NaviBox.SelectedItems[0].Text;
             NaviBox.DoDragDrop(NaviBox.SelectedItems, DragDropEffects.Move);
         }
 
@@ -372,7 +373,13 @@ namespace SanityArchiver
             {
                 targetIndex++;
             }
-            // NavigatorBoxStatic.CopyFile(SanityCommanderForm.SelectedFilePath + @"\" + NaviBox.SelectedItems[0].Text , SanityCommanderForm.TargetPath + @"\" + NaviBox.SelectedItems[0].Text + @"\");
+
+            if (NavigatorBoxOperations.IsItADirectory(SanityCommanderForm.SelectionPath))
+            {
+                NavigatorBoxOperations.CopyDirectory(SanityCommanderForm.SelectionPath, SanityCommanderForm.CopyTarget);
+                return;
+            }
+            NavigatorBoxOperations.CopyFile(SanityCommanderForm.SelectionPath, SanityCommanderForm.CopyTarget);
         }
 
         private void NaviBoxEvent_DragOver(object sender, DragEventArgs e)
@@ -399,7 +406,18 @@ namespace SanityArchiver
             ListViewItem dragToItem = NaviBox.GetItemAt(cp.X, cp.Y);
             try
             {
-                SanityCommanderForm.TargetPath = SanityCommanderForm.SelectedFilePath + @"\" + dragToItem.Text;
+                if (NavigatorBoxOperations.IsItADirectory(SanityCommanderForm.SelectionPath))
+                {
+                    DirectoryInfo srcDirInfo = new DirectoryInfo(SanityCommanderForm.SelectionPath);
+                    DirectoryInfo tarDirInfo = new DirectoryInfo(dragToItem.ListView.Columns[0].Text);
+                    SanityCommanderForm.CopyTarget = tarDirInfo.FullName + dragToItem.Text + @"\" + srcDirInfo.Name;
+                }
+                else
+                {
+                    FileInfo srcFileInfo = new FileInfo(SanityCommanderForm.SelectionPath);
+                    FileInfo tarFileInfo = new FileInfo(dragToItem.ListView.Columns[0].Text);
+                    SanityCommanderForm.CopyTarget = tarFileInfo.FullName + dragToItem.Text + @"\" + srcFileInfo.Name;
+                }
             }
             catch { }
         }
@@ -424,12 +442,12 @@ namespace SanityArchiver
                     return;
                 }
             }
-            if (NavigatorBoxOperations.IsItADirectory(SanityCommanderForm.SelectedFilePath))
+            if (NavigatorBoxOperations.IsItADirectory(SanityCommanderForm.SelectionPath))
             {
-                NavigatorBoxOperations.RenameDirectory(SanityCommanderForm.SelectedFilePath, newName);
+                NavigatorBoxOperations.RenameDirectory(SanityCommanderForm.SelectionPath, newName);
             }
-            NavigatorBoxOperations.RenameFile(SanityCommanderForm.SelectedFilePath, newName);
-            SanityCommanderForm.SelectedFilePath = newName;
+            NavigatorBoxOperations.RenameFile(SanityCommanderForm.SelectionPath, newName);
+            SanityCommanderForm.SelectionPath = newName;
         }
     }
 }

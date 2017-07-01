@@ -10,8 +10,9 @@ namespace SanityArchiver
     public partial class SanityCommanderForm : Form
     {
         public static List<NavigatorBox> naviBoxes = new List<NavigatorBox>();
-        public static string SelectedFilePath { get; set; }
+        public static string SelectionPath { get; set; }
         public static string TargetPath { get; set; }
+        public static string CopyTarget { get; set; }
 
         public SanityCommanderForm()
         {
@@ -108,7 +109,7 @@ namespace SanityArchiver
 
         private void propertiesToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            NavigatorBoxOperations.ShowFileProperties(SelectedFilePath);
+            NavigatorBoxOperations.ShowFileProperties(SelectionPath);
         }
 
         private void packToolStripMenuItem_Click(object sender, EventArgs e)
@@ -123,7 +124,7 @@ namespace SanityArchiver
 
         private void deleteDELToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            NavigatorBoxOperations.DeleteFile(SelectedFilePath);
+            NavigatorBoxOperations.DeleteFile(SelectionPath);
         }
 
         private void encryptFileToolStripMenuItem_Click(object sender, EventArgs e)
