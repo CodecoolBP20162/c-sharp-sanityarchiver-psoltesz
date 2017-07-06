@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -9,11 +8,6 @@ namespace SanityArchiver
 {
     public partial class SanityCommanderForm : Form
     {
-        public static List<NavigatorBox> naviBoxes = new List<NavigatorBox>();
-        public static string SelectionPath { get; set; }
-        public static string TargetPath { get; set; }
-        public static string CopyTarget { get; set; }
-
         public SanityCommanderForm()
         {
             InitializeComponent();
@@ -21,17 +15,14 @@ namespace SanityArchiver
 
         private void CreateNewNaviBox()
         {
-            string newNaviBoxName = "naviBox" + naviBoxes.Count.ToString();
+            string newNaviBoxName = "naviBox" + NavigatorBoxControl.naviBoxes.Count.ToString();
             ListView newListView = new ListView();
             NavigatorBox newNaviBox = new NavigatorBox(newListView);
             newNaviBox.NaviBox.Name = newNaviBoxName;
             newNaviBox.NaviBox.View = View.Details;
-            int numberOfNaviboxes = NavigatorBoxOperations.CalculateNumberOfNaviBoxes();
-            newNaviBox.NaviBox.Size = new Size(ClientRectangle.Size.Width / (naviBoxes.Count + numberOfNaviboxes), ClientRectangle.Size.Height);
-            newNaviBox.NaviBox.Location = new Point(ClientRectangle.Location.X, menuStrip1.Size.Height + 1);
             newNaviBox.Setup();
 
-            naviBoxes.Add(newNaviBox);
+            NavigatorBoxControl.naviBoxes.Add(newNaviBox);
             Controls.Add(newNaviBox.NaviBox);
 
             RefreshNaviboxView();
@@ -39,10 +30,10 @@ namespace SanityArchiver
 
         private void DeleteNaviBox()
         {
-            if (naviBoxes.Count > 1)
+            if (NavigatorBoxControl.naviBoxes.Count > 1)
             {
-                naviBoxes.RemoveAt(naviBoxes.Count - 1);
-                string controlToDelete = "naviBox" + (naviBoxes.Count).ToString();
+                NavigatorBoxControl.naviBoxes.RemoveAt(NavigatorBoxControl.naviBoxes.Count - 1);
+                string controlToDelete = "naviBox" + (NavigatorBoxControl.naviBoxes.Count).ToString();
                 Control ctn = Controls[controlToDelete];
                 Controls.Remove(ctn);
             }
@@ -57,12 +48,12 @@ namespace SanityArchiver
         {
             int startingWidth = CalculateStartingWidth();
 
-            foreach (NavigatorBox item in naviBoxes)
+            foreach (NavigatorBox item in NavigatorBoxControl.naviBoxes)
             {
-                item.NaviBox.Size = new Size(ClientRectangle.Size.Width / naviBoxes.Count, ClientRectangle.Size.Height - (NavigatorBoxOperations.GetTaskbarHeight() + 10));
+                item.NaviBox.Size = new Size(ClientRectangle.Size.Width / NavigatorBoxControl.naviBoxes.Count, ClientRectangle.Size.Height - (NavigatorBoxControl.GetTaskbarHeight() + 10));
                 item.NaviBox.Location = new Point(startingWidth, menuStrip1.Size.Height + 1);
 
-                startingWidth = startingWidth + ClientRectangle.Size.Width / naviBoxes.Count;
+                startingWidth = startingWidth + ClientRectangle.Size.Width / NavigatorBoxControl.naviBoxes.Count;
 
                 int csw = item.NaviBox.ClientSize.Width;
                 for (int i = 1; i < item.NaviBox.Columns.Count; i++)
@@ -77,7 +68,7 @@ namespace SanityArchiver
 
         private int CalculateStartingWidth()
         {
-            return ClientRectangle.Location.X / naviBoxes.Count;
+            return ClientRectangle.Location.X / NavigatorBoxControl.naviBoxes.Count;
         }
 
         private void SanityCommanderForm_Load(object sender, EventArgs e)
@@ -109,32 +100,32 @@ namespace SanityArchiver
 
         private void propertiesToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            NavigatorBoxOperations.ShowFileProperties(SelectionPath);
+            NavigatorBoxControl.ShowFileProperties(NavigatorBoxControl.SelectionPath);
         }
 
         private void packToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            NavigatorBoxOperations.PackFile(NavigatorBoxOperations.MakeFileInfoFromPath());
+            FileAndDirOperations.PackFile(NavigatorBoxControl.MakeFileInfoFromPath());
         }
 
         private void unpackToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            NavigatorBoxOperations.UnpackFile(NavigatorBoxOperations.MakeFileInfoFromPath());
+            FileAndDirOperations.UnpackFile(NavigatorBoxControl.MakeFileInfoFromPath());
         }
 
         private void deleteDELToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            NavigatorBoxOperations.DeleteFile(SelectionPath);
+            FileAndDirOperations.DeleteFile(NavigatorBoxControl.SelectionPath);
         }
 
         private void encryptFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            NavigatorBoxOperations.CheckIfEncryptable();
+            NavigatorBoxControl.CheckIfEncryptable();
         }
 
         private void decryptFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            NavigatorBoxOperations.CheckIfDecryptable();
+            NavigatorBoxControl.CheckIfDecryptable();
         }
     }
 }

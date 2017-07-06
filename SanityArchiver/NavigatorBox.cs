@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -18,7 +19,7 @@ namespace SanityArchiver
         public NavigatorBox(ListView naviBox)
         {
             NaviBox = naviBox;
-            CurrentDirectoryPath = @"C:\\";
+            CurrentDirectoryPath = @"C:\";
             currentDirectoryInfo = new DirectoryInfo(CurrentDirectoryPath);
         }
 
@@ -54,7 +55,7 @@ namespace SanityArchiver
         {
             WillNavigateIntoDirectory(false);
             CurrentDirectoryPath = currentDirectoryInfo.FullName + @"\";
-            NavigatorBoxOperations.RefreshNaviBoxContent();
+            NavigatorBoxControl.RefreshNaviBoxContent();
         }
 
         public bool KeyUp(Keys key)
@@ -70,7 +71,7 @@ namespace SanityArchiver
         {
             try
             {
-                SanityCommanderForm.SelectionPath = CurrentDirectoryPath + NaviBox.SelectedItems[0].Text;
+                NavigatorBoxControl.SelectionPath = CurrentDirectoryPath + NaviBox.SelectedItems[0].Text;
             }
             catch { }
         }
@@ -106,9 +107,10 @@ namespace SanityArchiver
                 subDirectories = currentDirectoryInfo.GetDirectories();
                 return subDirectories;
             }
-            catch
+            catch (UnauthorizedAccessException)
             {
-                subDirectories = null;
+                CustomDialog.ErrorMessage("Access denied. You might not see every folder you need.", "Error");
+                subDirectories = new DirectoryInfo[0];
                 return subDirectories;
             }
         }
@@ -121,12 +123,10 @@ namespace SanityArchiver
                 files = currentDirectoryInfo.GetFiles();
                 return files;
             }
-            catch
+            catch (UnauthorizedAccessException)
             {
-                CustomDialog.ErrorMessage("ERROR: Access denied.", "Error");
-                currentDirectoryInfo = Directory.GetParent(CurrentDirectoryPath).Parent;
-                CurrentDirectoryPath = currentDirectoryInfo.FullName;
-                files = null;
+                CustomDialog.ErrorMessage("Access denied. You might not see every file you need.", "Error");
+                files = new FileInfo[0];
                 return files;
             }
         }
@@ -151,7 +151,7 @@ namespace SanityArchiver
         public void ChooseNavigateOrExecute()
         {
             CurrentSelection = new FileInfo(CurrentDirectoryPath + NaviBox.SelectedItems[0].Text);
-            if (NavigatorBoxOperations.IsItADirectory(CurrentSelection.FullName))
+            if (NavigatorBoxControl.IsItADirectory(CurrentSelection.FullName))
             {
                 WillNavigateIntoDirectory(true);
                 currentDirectoryInfo = new DirectoryInfo(CurrentDirectoryPath);
@@ -173,11 +173,10 @@ namespace SanityArchiver
 
         public void ListContent()
         {
-            DirectoryInfo[] subDirectories = GetSubdirectories();
-            FileInfo[] files = GetFiles();
-
-            if (subDirectories == null || files == null)
-                return;
+            List<FileSystemInfo> allItems = new List<FileSystemInfo>();
+            // if GetSubdirectories of GetFiles return null, problems may happen. They should return an empty array I guess.
+            allItems.AddRange(GetSubdirectories());
+            allItems.AddRange(GetFiles());
 
             ClearContent();
             NaviBox.Columns[0].Text = CurrentDirectoryPath;
@@ -198,31 +197,36 @@ namespace SanityArchiver
                 imageList.Images.Add(Image.FromFile(file));
             }
 
-            foreach (DirectoryInfo item in subDirectories)
+            foreach (FileSystemInfo item in allItems)
             {
                 string[] row = new string[4];
                 row[0] = item.Name;
-                row[1] = "<DIR>";
-                string size = (String.Format("{0:N0} KB", NavigatorBoxOperations.DirSize(new DirectoryInfo(item.FullName)) / 1024));
-                if (size != "0 KB") row[2] = size; else row[2] = "Unknown";
-                row[3] = item.LastWriteTime.ToShortDateString() + item.LastWriteTime.ToLongTimeString();
-                ListViewItem folderItem = new ListViewItem(row);
-                folderItem.BackColor = Color.LightGoldenrodYellow;
-                NaviBox.Items.Add(folderItem);
-                folderItem.ImageIndex = 1;
-            }
 
-            foreach (FileInfo item in files)
-            {
-                string[] row = new string[4];
-                row[0] = item.Name; // Path.GetFileNameWithoutExtension(item.Name);
-                row[1] = item.Extension.ToUpper();
-                row[2] = String.Format("{0:N0} KB", NavigatorBoxOperations.FileSize(new FileInfo(item.FullName)) / 1024);
-                row[3] = item.CreationTime.ToShortDateString() + item.CreationTime.ToLongTimeString();
-                ListViewItem fileItem = new ListViewItem(row);
-                fileItem.BackColor = Color.LightCyan;
-                NaviBox.Items.Add(fileItem);
-                fileItem.ImageIndex = 0;
+                Color backColor;
+                int imageIndex = 0;
+
+                if (item.GetType().Equals(Type.GetType("System.IO.DirectoryInfo")))
+                {
+                    row[1] = "<DIR>";
+                    string size = (String.Format("{0:N0} KB", NavigatorBoxControl.DirSize(new DirectoryInfo(item.FullName)) / 1024));
+                    if (size != "0 KB") row[2] = size; else row[2] = "Unknown";
+                    row[3] = item.LastWriteTime.ToShortDateString() + item.LastWriteTime.ToLongTimeString();
+                    backColor = Color.LightGoldenrodYellow;
+                    imageIndex = 1;
+                }
+                else
+                {
+                    row[1] = item.Extension.ToUpper();
+                    row[2] = String.Format("{0:N0} KB", NavigatorBoxControl.FileSize(new FileInfo(item.FullName)) / 1024);
+                    row[3] = item.CreationTime.ToShortDateString() + item.CreationTime.ToLongTimeString();
+                    backColor = Color.LightCyan;
+                    imageIndex = 0;
+                }
+                ListViewItem listViewItem = new ListViewItem(row);
+                listViewItem.BackColor = backColor;
+                listViewItem.ImageIndex = imageIndex;
+
+                NaviBox.Items.Add(listViewItem);
             }
 
             NaviBox.Items[0].Selected = true;
@@ -248,26 +252,26 @@ namespace SanityArchiver
 
             if (key == Keys.F3)
             {
-                NavigatorBoxOperations.PackFile(NavigatorBoxOperations.MakeFileInfoFromPath());
+                FileAndDirOperations.PackFile(NavigatorBoxControl.MakeFileInfoFromPath());
             }
 
             if (key == Keys.F4)
             {
-                NavigatorBoxOperations.UnpackFile(NavigatorBoxOperations.MakeFileInfoFromPath());
+                FileAndDirOperations.UnpackFile(NavigatorBoxControl.MakeFileInfoFromPath());
             }
 
             if (key == Keys.F5)
             {
-                NavigatorBoxOperations.ShowFileProperties(SanityCommanderForm.SelectionPath);
+                NavigatorBoxControl.ShowFileProperties(NavigatorBoxControl.SelectionPath);
             }
 
             if (key == Keys.Delete)
             {
-                if (NavigatorBoxOperations.IsItADirectory(SanityCommanderForm.SelectionPath))
+                if (NavigatorBoxControl.IsItADirectory(NavigatorBoxControl.SelectionPath))
                 {
-                    NavigatorBoxOperations.DeleteDirectory(SanityCommanderForm.SelectionPath);
+                    FileAndDirOperations.DeleteDirectory(NavigatorBoxControl.SelectionPath);
                 }
-                NavigatorBoxOperations.DeleteFile(SanityCommanderForm.SelectionPath);
+                FileAndDirOperations.DeleteFile(NavigatorBoxControl.SelectionPath);
             }
 
             if (key == Keys.Escape)
@@ -310,7 +314,7 @@ namespace SanityArchiver
 
         private void NaviBoxEvent_ItemDrag(object sender, ItemDragEventArgs e)
         {
-            SanityCommanderForm.SelectionPath = CurrentDirectoryPath + NaviBox.SelectedItems[0].Text;
+            NavigatorBoxControl.SelectionPath = CurrentDirectoryPath + NaviBox.SelectedItems[0].Text;
             NaviBox.DoDragDrop(NaviBox.SelectedItems, DragDropEffects.Move);
         }
 
@@ -374,12 +378,12 @@ namespace SanityArchiver
                 targetIndex++;
             }
 
-            if (NavigatorBoxOperations.IsItADirectory(SanityCommanderForm.SelectionPath))
+            if (NavigatorBoxControl.IsItADirectory(NavigatorBoxControl.SelectionPath))
             {
-                NavigatorBoxOperations.CopyDirectory(SanityCommanderForm.SelectionPath, SanityCommanderForm.CopyTarget);
+                NavigatorBoxControl.CopyDirectory(NavigatorBoxControl.SelectionPath, NavigatorBoxControl.CopyTarget);
                 return;
             }
-            NavigatorBoxOperations.CopyFile(SanityCommanderForm.SelectionPath, SanityCommanderForm.CopyTarget);
+            NavigatorBoxControl.CopyFile(NavigatorBoxControl.SelectionPath, NavigatorBoxControl.CopyTarget);
         }
 
         private void NaviBoxEvent_DragOver(object sender, DragEventArgs e)
@@ -406,17 +410,17 @@ namespace SanityArchiver
             ListViewItem dragToItem = NaviBox.GetItemAt(cp.X, cp.Y);
             try
             {
-                if (NavigatorBoxOperations.IsItADirectory(SanityCommanderForm.SelectionPath))
+                if (NavigatorBoxControl.IsItADirectory(NavigatorBoxControl.SelectionPath))
                 {
-                    DirectoryInfo srcDirInfo = new DirectoryInfo(SanityCommanderForm.SelectionPath);
+                    DirectoryInfo srcDirInfo = new DirectoryInfo(NavigatorBoxControl.SelectionPath);
                     DirectoryInfo tarDirInfo = new DirectoryInfo(dragToItem.ListView.Columns[0].Text);
-                    SanityCommanderForm.CopyTarget = tarDirInfo.FullName + dragToItem.Text + @"\" + srcDirInfo.Name;
+                    NavigatorBoxControl.CopyTarget = tarDirInfo.FullName + dragToItem.Text + @"\" + srcDirInfo.Name;
                 }
                 else
                 {
-                    FileInfo srcFileInfo = new FileInfo(SanityCommanderForm.SelectionPath);
+                    FileInfo srcFileInfo = new FileInfo(NavigatorBoxControl.SelectionPath);
                     FileInfo tarFileInfo = new FileInfo(dragToItem.ListView.Columns[0].Text);
-                    SanityCommanderForm.CopyTarget = tarFileInfo.FullName + dragToItem.Text + @"\" + srcFileInfo.Name;
+                    NavigatorBoxControl.CopyTarget = tarFileInfo.FullName + dragToItem.Text + @"\" + srcFileInfo.Name;
                 }
             }
             catch { }
@@ -442,12 +446,12 @@ namespace SanityArchiver
                     return;
                 }
             }
-            if (NavigatorBoxOperations.IsItADirectory(SanityCommanderForm.SelectionPath))
+            if (NavigatorBoxControl.IsItADirectory(NavigatorBoxControl.SelectionPath))
             {
-                NavigatorBoxOperations.RenameDirectory(SanityCommanderForm.SelectionPath, newName);
+                FileAndDirOperations.RenameDirectory(NavigatorBoxControl.SelectionPath, newName);
             }
-            NavigatorBoxOperations.RenameFile(SanityCommanderForm.SelectionPath, newName);
-            SanityCommanderForm.SelectionPath = newName;
+            FileAndDirOperations.RenameFile(NavigatorBoxControl.SelectionPath, newName);
+            NavigatorBoxControl.SelectionPath = newName;
         }
     }
 }

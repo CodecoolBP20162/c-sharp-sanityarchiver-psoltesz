@@ -49,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CustomDialog.cs" />
+    <Compile Include="FileAndDirOperations.cs" />
     <Compile Include="SanityCommanderForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -56,7 +57,7 @@
       <DependentUpon>SanityCommanderForm.cs</DependentUpon>
     </Compile>
     <Compile Include="NavigatorBox.cs" />
-    <Compile Include="NavigatorBoxOperations.cs" />
+    <Compile Include="NavigatorBoxControl.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="SanityCommanderForm.resx">
